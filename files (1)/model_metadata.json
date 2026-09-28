@@ -1,0 +1,74 @@
+{
+  "features": [
+    "product_category_enc",
+    "month",
+    "day_of_week",
+    "season_enc",
+    "price",
+    "discount_pct",
+    "promotion_type_enc",
+    "stock_level",
+    "lead_time_days",
+    "supplier_reliability",
+    "historical_avg_demand",
+    "demand_trend",
+    "competitor_price_ratio",
+    "customer_rating",
+    "num_reviews",
+    "reorder_point",
+    "is_holiday_week",
+    "region_demand_index"
+  ],
+  "categories": [
+    "Books",
+    "Clothing",
+    "Electronics",
+    "Food & Beverage",
+    "Health & Beauty",
+    "Home & Garden",
+    "Sports",
+    "Toys"
+  ],
+  "seasons": [
+    "Fall",
+    "Spring",
+    "Summer",
+    "Winter"
+  ],
+  "promotion_types": [
+    "BOGO",
+    "Bundle",
+    "Discount",
+    "Flash Sale",
+    "None"
+  ],
+  "metrics": {
+    "mae": 9.19,
+    "rmse": 13.98,
+    "r2": 0.938,
+    "mape": 7.83
+  },
+  "feature_importances": {
+    "historical_avg_demand": 0.8259,
+    "price": 0.03,
+    "discount_pct": 0.0222,
+    "reorder_point": 0.0206,
+    "month": 0.0168,
+    "competitor_price_ratio": 0.0155,
+    "stock_level": 0.0151,
+    "day_of_week": 0.012,
+    "promotion_type_enc": 0.0097,
+    "is_holiday_week": 0.0085,
+    "demand_trend": 0.0073,
+    "lead_time_days": 0.0051,
+    "product_category_enc": 0.0039,
+    "num_reviews": 0.0032,
+    "season_enc": 0.0028,
+    "customer_rating": 0.0014,
+    "supplier_reliability": 0.0,
+    "region_demand_index": 0.0
+  },
+  "train_size": 278,
+  "test_size": 70,
+  "last_retrained": "2026-09-28T22:49:58.082607"
+}

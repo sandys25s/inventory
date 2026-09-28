@@ -1,0 +1,2914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DemandIQ™ — Enterprise Inventory Forecasting & Optimization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root {
+  --bg:           #0a0a0f;
+  --surface:      #12121a;
+  --card:         #181824;
+  --card-hover:   #1f1f2e;
+  --border:       #272738;
+  --border-light: #34344c;
+  --accent:       #7c6dfa;
+  --accent-light: #9c8eff;
+  --accent-glow:  rgba(124,109,250,0.22);
+  --accent2:      #fa6d9a;
+  --accent3:      #6dfac8;
+  --text:         #f0f0f8;
+  --text-dim:     #a0a0b8;
+  --muted:        #686882;
+  --critical:     #ef4444;
+  --critical-bg:  rgba(239,68,68,0.12);
+  --warning:      #f59e0b;
+  --warning-bg:   rgba(245,158,11,0.12);
+  --normal:       #10b981;
+  --normal-bg:    rgba(16,185,129,0.12);
+  --overstock:    #8b5cf6;
+  --overstock-bg: rgba(139,92,246,0.12);
+  --radius:       14px;
+  --sidebar-w:    260px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  overflow-x: hidden;
+}
+
+/* Background grid & ambient glows */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(124,109,250,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,109,250,0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none;
+  z-index: 0;
+}
+.orb {
+  position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0;
+}
+.orb1 { width: 550px; height: 550px; top: -120px; left: -100px; background: rgba(124,109,250,0.10); }
+.orb2 { width: 450px; height: 450px; bottom: -80px; right: -80px; background: rgba(250,109,154,0.07); }
+.orb3 { width: 350px; height: 350px; top: 40%; right: 20%; background: rgba(109,250,200,0.05); }
+
+/* Sidebar Navigation */
+#sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  z-index: 50;
+  overflow-y: auto;
+}
+.sidebar-header {
+  padding: 24px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.logo-mark {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 20px; font-weight: 800; color: #fff;
+  box-shadow: 0 4px 12px rgba(124,109,250,0.35);
+}
+.logo-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px; font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.logo-title span { color: var(--accent); }
+.logo-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  display: block;
+}
+
+.nav-group {
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.nav-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 8px 12px 4px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+.nav-item:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.03);
+}
+.nav-item.active {
+  color: #fff;
+  background: rgba(124,109,250,0.15);
+  border-color: rgba(124,109,250,0.35);
+  font-weight: 600;
+}
+.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.8; }
+.nav-item.active svg { opacity: 1; stroke: var(--accent-light); }
+.nav-badge {
+  margin-left: auto;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+.nav-badge.alert { background: var(--critical); color: #fff; }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 18px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; color: #fff;
+}
+.user-meta { flex: 1; overflow: hidden; }
+.user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.role-admin { background: rgba(124,109,250,0.25); color: var(--accent-light); }
+.role-manager { background: rgba(16,185,129,0.2); color: var(--normal); }
+.role-staff { background: rgba(245,158,11,0.2); color: var(--warning); }
+
+/* Main Content Area */
+#main-wrap {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Topbar */
+header {
+  padding: 16px 36px;
+  background: rgba(18,18,26,0.75);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.page-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.data-mode-pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+.data-mode-pill.demo {
+  background: rgba(124,109,250,0.12);
+  border: 1px solid rgba(124,109,250,0.3);
+  color: var(--accent-light);
+}
+.data-mode-pill.real {
+  background: rgba(16,185,129,0.12);
+  border: 1px solid rgba(16,185,129,0.3);
+  color: var(--normal);
+}
+.pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #906dfa);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(124,109,250,0.3);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(124,109,250,0.45);
+}
+.btn-outline {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.btn-outline:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: rgba(124,109,250,0.06);
+}
+.btn-danger {
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: var(--critical);
+}
+.btn-danger:hover {
+  background: var(--critical);
+  color: #fff;
+}
+.btn-success {
+  background: rgba(16,185,129,0.15);
+  border: 1px solid rgba(16,185,129,0.3);
+  color: var(--normal);
+}
+.btn-success:hover {
+  background: var(--normal);
+  color: #fff;
+}
+.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+/* Main View Container */
+main {
+  padding: 32px 36px 60px;
+  max-width: 1480px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.view-section { display: none; }
+.view-section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Cards & Layout */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-title .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+.card-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* KPI Cards Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+.kpi-card:hover {
+  border-color: var(--border-light);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--kpi-bar, var(--accent));
+  opacity: 0.85;
+}
+.kpi-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.kpi-value {
+  font-size: 26px;
+  font-weight: 700;
+  font-family: 'Syne', sans-serif;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+.kpi-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Charts Grid */
+.charts-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.charts-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.chart-box {
+  position: relative;
+  height: 280px;
+  width: 100%;
+}
+
+/* Tables */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+th {
+  background: rgba(255,255,255,0.02);
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text);
+  white-space: nowrap;
+}
+tr:hover td {
+  background: rgba(124,109,250,0.03);
+}
+
+/* Status Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+}
+.badge-critical { background: var(--critical-bg); color: var(--critical); border: 1px solid rgba(239,68,68,0.25); }
+.badge-low      { background: var(--warning-bg);  color: var(--warning);  border: 1px solid rgba(245,158,11,0.25); }
+.badge-normal   { background: var(--normal-bg);   color: var(--normal);   border: 1px solid rgba(16,185,129,0.25); }
+.badge-overstock{ background: var(--overstock-bg);color: var(--overstock);border: 1px solid rgba(139,92,246,0.25); }
+
+/* Filter & Action Bar */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.search-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  padding: 9px 14px 9px 36px;
+  border-radius: 10px;
+  outline: none;
+  min-width: 260px;
+  transition: border-color 0.2s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23686882' viewBox='0 0 24 24'%3E%3Cpath d='M10 18a7.952 7.952 0 0 0 4.897-1.688l4.396 4.396 1.414-1.414-4.396-4.396A7.952 7.952 0 0 0 18 10c0-4.411-3.589-8-8-8s-8 3.589-8 8 3.589 8 8 8zm0-14c3.309 0 6 2.691 6 6s-2.691 6-6 6-6-2.691-6-6 2.691-6 6-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 12px center;
+}
+.search-input:focus {
+  border-color: var(--accent);
+}
+select.filter-select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  outline: none;
+  cursor: pointer;
+}
+select.filter-select option { background: var(--surface); }
+
+/* Horizon Toggle Pills */
+.horizon-pills {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+.horizon-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.horizon-btn.active {
+  background: rgba(124,109,250,0.18);
+  color: var(--accent-light);
+  font-weight: 600;
+}
+
+/* Modals */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(5,5,8,0.8);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+.modal-card {
+  background: var(--card);
+  border: 1px solid var(--border-light);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 32px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.modal-close {
+  position: absolute; top: 20px; right: 20px;
+  background: none; border: none; color: var(--muted);
+  font-size: 24px; cursor: pointer; line-height: 1;
+}
+.modal-close:hover { color: #fff; }
+
+/* Forms */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-group.full { grid-column: 1 / -1; }
+label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+input, select, textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124,109,250,0.15);
+}
+
+/* Upload Dropzone */
+.dropzone {
+  border: 2px dashed var(--border-light);
+  border-radius: 16px;
+  padding: 40px 24px;
+  text-align: center;
+  background: rgba(255,255,255,0.01);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--accent);
+  background: rgba(124,109,250,0.04);
+}
+.dropzone-icon {
+  font-size: 40px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+/* Toast notifications */
+#toast-container {
+  position: fixed; bottom: 24px; right: 24px;
+  display: flex; flex-direction: column; gap: 10px;
+  z-index: 200;
+}
+.toast {
+  background: var(--card);
+  border: 1px solid var(--border-light);
+  padding: 14px 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  font-size: 13px;
+  display: flex; align-items: center; gap: 10px;
+  animation: slideIn 0.3s ease;
+  min-width: 280px;
+}
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.toast.success { border-left: 4px solid var(--normal); color: #fff; }
+.toast.error   { border-left: 4px solid var(--critical); color: #fff; }
+.toast.info    { border-left: 4px solid var(--accent); color: #fff; }
+
+/* Responsive Adjustments */
+@media (max-width: 1100px) {
+  .charts-grid-2, .charts-grid-3 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  #sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  #sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  #main-wrap { margin-left: 0; }
+  header { padding: 14px 20px; }
+  main { padding: 20px 16px 40px; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo-mark">D</div>
+    <div>
+      <div class="logo-title">Demand<span>IQ</span></div>
+      <span class="logo-tag">ENTERPRISE SUITE v2.0</span>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <span class="nav-label">Core Operations</span>
+    <a class="nav-item active" onclick="switchNav('dashboard')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+      Dashboard
+    </a>
+    <a class="nav-item" onclick="switchNav('forecasts')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Multi-Product Forecast
+    </a>
+    <a class="nav-item" onclick="switchNav('products')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      Products Catalog
+    </a>
+    <a class="nav-item" onclick="switchNav('alerts')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      Reorder Alerts
+      <span class="nav-badge alert" id="sidebar-alert-badge">0</span>
+    </a>
+    <a class="nav-item" onclick="switchNav('overstock')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Overstock & Capital
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <span class="nav-label">Intelligence & Analysis</span>
+    <a class="nav-item" onclick="switchNav('simulation')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      What-If Simulation
+    </a>
+    <a class="nav-item" onclick="switchNav('single-prediction')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+      Single ML Predictor
+    </a>
+    <a class="nav-item" onclick="switchNav('suppliers')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      Suppliers Matrix
+    </a>
+    <a class="nav-item" onclick="switchNav('events')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      Seasonal & Events
+    </a>
+  </div>
+
+  <div class="nav-group">
+    <span class="nav-label">Data & Governance</span>
+    <a class="nav-item" onclick="switchNav('upload')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+      Data Upload (Excel/CSV)
+    </a>
+    <a class="nav-item" onclick="switchNav('reports')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Reports & Exports
+    </a>
+    <a class="nav-item" onclick="switchNav('model')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+      ML Performance & Retrain
+    </a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-avatar" id="avatar-initials">A</div>
+    <div class="user-meta">
+      <div class="user-name" id="user-display-name">Admin User</div>
+      <span class="user-role-badge role-admin" id="user-role-badge">ADMIN</span>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="openLoginModal()" title="Switch Account">
+      <svg style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+    </button>
+  </div>
+</aside>
+
+<!-- Main Wrapper -->
+<div id="main-wrap">
+  <header>
+    <div class="topbar-left">
+      <button class="btn btn-outline btn-sm" style="display:none;" id="mobile-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="page-title" id="page-header-title">Executive Demand & Inventory Dashboard</div>
+      <div class="data-mode-pill demo" id="data-mode-indicator">
+        <span class="pill-dot"></span>
+        <span id="data-mode-text">DEMO DATA MODE</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-outline btn-sm" onclick="reloadDemoData()" title="Reset / Reload Demo Data">
+        ↻ Reload Demo Data
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="switchNav('upload')">
+        ↑ Upload Real Data
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. DASHBOARD VIEW -->
+    <div id="view-dashboard" class="view-section active">
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kpi-bar: #7c6dfa;">
+          <div class="kpi-label">Total Products</div>
+          <div class="kpi-value" id="kpi-total-products">—</div>
+          <div class="kpi-sub">Across 8 categories</div>
+        </div>
+        <div class="kpi-card" style="--kpi-bar: #38bdf8;">
+          <div class="kpi-label">Total Inventory Units</div>
+          <div class="kpi-value" id="kpi-total-inventory">—</div>
+          <div class="kpi-sub">Physical warehouse stock</div>
+        </div>
+        <div class="kpi-card" style="--kpi-bar: #6dfac8;">
+          <div class="kpi-label">Expected Demand (30d)</div>
+          <div class="kpi-value" id="kpi-expected-demand">—</div>
+          <div class="kpi-sub">ML predicted demand</div>
+        </div>
+        <div class="kpi-card" style="--kpi-bar: #f59e0b;">
+          <div class="kpi-label">Low Stock Products</div>
+          <div class="kpi-value" id="kpi-low-stock" style="color:var(--warning);">—</div>
+          <div class="kpi-sub">Under reorder threshold</div>
+        </div>
+        <div class="kpi-card" style="--kpi-bar: #8b5cf6;">
+          <div class="kpi-label">Overstock Products</div>
+          <div class="kpi-value" id="kpi-overstock" style="color:var(--overstock);">—</div>
+          <div class="kpi-sub">Excess safety buffer</div>
+        </div>
+        <div class="kpi-card" style="--kpi-bar: #ef4444;">
+          <div class="kpi-label">Products to Reorder</div>
+          <div class="kpi-value" id="kpi-reorder-count" style="color:var(--critical);">—</div>
+          <div class="kpi-sub">Urgent restocking required</div>
+        </div>
+        <div class="kpi-card" style="--kpi-bar: #10b981;">
+          <div class="kpi-label">Inventory Value</div>
+          <div class="kpi-value" id="kpi-inventory-value">—</div>
+          <div class="kpi-sub">Tied-up working capital</div>
+        </div>
+      </div>
+
+      <!-- Charts Row 1: Historical vs Forecast Demand & Monthly Demand Trend -->
+      <div class="charts-grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title"><span class="dot"></span>Historical Sales vs ML Forecast Demand</div>
+              <div class="card-subtitle">Aggregated actual past sales compared to ML model projections</div>
+            </div>
+          </div>
+          <div class="chart-box">
+            <canvas id="chart-hist-vs-forecast"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title"><span class="dot"></span>Monthly Demand Trend & Seasonality</div>
+              <div class="card-subtitle">12-month demand curve across seasonal cycles</div>
+            </div>
+          </div>
+          <div class="chart-box">
+            <canvas id="chart-monthly-trend"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 2: Category Demand, Top 10 High Demand, Supplier Reliability -->
+      <div class="charts-grid-3">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot"></span>Category-wise Demand</div>
+          </div>
+          <div class="chart-box">
+            <canvas id="chart-category-demand"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot"></span>Top 10 High Demand SKUs</div>
+          </div>
+          <div class="chart-box">
+            <canvas id="chart-top-demand"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot"></span>Supplier Performance Matrix</div>
+          </div>
+          <div class="chart-box">
+            <canvas id="chart-supplier-performance"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Critical Restock Quick Table -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="dot" style="background:var(--critical);box-shadow:0 0 10px var(--critical);"></span>Urgent Restock Action Plan</div>
+            <div class="card-subtitle">Products requiring immediate procurement purchase orders</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="switchNav('alerts')">View All Alerts →</button>
+        </div>
+        <div class="table-responsive">
+          <table id="dashboard-urgent-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Current Stock</th>
+                <th>Forecast Demand</th>
+                <th>Safety Stock</th>
+                <th>Lead Time</th>
+                <th>Recommended Order</th>
+                <th>Supplier</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="10" style="text-align:center;padding:30px;color:var(--muted)">Loading restock recommendations…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. MULTI-PRODUCT FORECAST VIEW -->
+    <div id="view-forecasts" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="dot"></span>Multi-Product Demand Forecasting & Optimization</div>
+            <div class="card-subtitle">Enterprise SKU-level machine learning predictions, safety stock, and reorder point matrix</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div class="horizon-pills">
+              <button class="horizon-btn" onclick="setHorizon(7, this)">7 Days</button>
+              <button class="horizon-btn active" onclick="setHorizon(30, this)">30 Days</button>
+              <button class="horizon-btn" onclick="setHorizon(90, this)">90 Days</button>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('forecast', 'xlsx')">Export Excel</button>
+            <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('forecast', 'pdf')">Export PDF</button>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" class="search-input" id="forecast-search" placeholder="Search product name or SKU..." oninput="filterForecastsTable()" />
+          <select class="filter-select" id="forecast-cat-filter" onchange="filterForecastsTable()">
+            <option value="All">All Categories</option>
+          </select>
+          <select class="filter-select" id="forecast-status-filter" onchange="filterForecastsTable()">
+            <option value="All">All Statuses</option>
+            <option value="Critical">Critical</option>
+            <option value="Low Stock">Low Stock</option>
+            <option value="Normal">Normal</option>
+            <option value="Overstock">Overstock</option>
+          </select>
+          <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);" id="forecast-count-label">Showing 0 products</span>
+        </div>
+
+        <div class="table-responsive">
+          <table id="forecasts-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Current Stock</th>
+                <th>Forecast Demand</th>
+                <th>Safety Stock</th>
+                <th>Reorder Point</th>
+                <th>Recommended Reorder Qty</th>
+                <th>Days Stock</th>
+                <th>Confidence</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="forecasts-tbody">
+              <tr><td colspan="11" style="text-align:center;padding:30px;color:var(--muted)">Loading forecast matrix…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. PRODUCTS CATALOG VIEW -->
+    <div id="view-products" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="dot"></span>Inventory Product Catalog</div>
+            <div class="card-subtitle">Complete product master records with pricing, inventory valuation, and supplier links</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openAddProductModal()">+ Add New Product</button>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" class="search-input" id="products-search" placeholder="Search product catalog..." oninput="filterProductsTable()" />
+          <select class="filter-select" id="products-cat-filter" onchange="filterProductsTable()">
+            <option value="All">All Categories</option>
+          </select>
+        </div>
+
+        <div class="table-responsive">
+          <table id="products-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Unit Price</th>
+                <th>Unit Cost</th>
+                <th>Stock Level</th>
+                <th>Reorder Point</th>
+                <th>Lead Time</th>
+                <th>Supplier</th>
+                <th>Rating</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="products-tbody">
+              <tr><td colspan="11" style="text-align:center;padding:30px;color:var(--muted)">Loading product master…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. REORDER ALERTS VIEW -->
+    <div id="view-alerts" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="dot" style="background:var(--critical);box-shadow:0 0 10px var(--critical);"></span>Autonomous Reorder & Stock Shortage Alerts</div>
+            <div class="card-subtitle">Automated trigger detection for stockouts, lead time replenishment risks, and demand surges</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('reorder', 'pdf')">Export Reorder Plan (PDF)</button>
+        </div>
+
+        <div class="table-responsive">
+          <table id="alerts-table">
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Stock / Demand</th>
+                <th>Lead Time</th>
+                <th>Order Qty</th>
+                <th>Supplier</th>
+                <th>Recommended Action</th>
+                <th>Operation</th>
+              </tr>
+            </thead>
+            <tbody id="alerts-tbody">
+              <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)">Loading alert feeds…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. OVERSTOCK & CAPITAL OPTIMIZATION VIEW -->
+    <div id="view-overstock" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="dot" style="background:var(--overstock);box-shadow:0 0 10px var(--overstock);"></span>Overstock Detection & Working Capital Recovery</div>
+            <div class="card-subtitle">Identify trapped capital and get actionable business recommendations (Discounts, Bundling, PO pauses)</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('overstock', 'xlsx')">Export Overstock Plan</button>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card" style="--kpi-bar: var(--overstock);">
+            <div class="kpi-label">Overstocked SKUs</div>
+            <div class="kpi-value" id="overstock-sku-count">—</div>
+            <div class="kpi-sub">Inventory > 2.0x 30d Demand</div>
+          </div>
+          <div class="kpi-card" style="--kpi-bar: #ec4899;">
+            <div class="kpi-label">Trapped Working Capital</div>
+            <div class="kpi-value" id="overstock-trapped-capital">—</div>
+            <div class="kpi-sub">Cost value of excess inventory</div>
+          </div>
+          <div class="kpi-card" style="--kpi-bar: #38bdf8;">
+            <div class="kpi-label">Excess Units Total</div>
+            <div class="kpi-value" id="overstock-total-units">—</div>
+            <div class="kpi-sub">Units above safety buffer</div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table id="overstock-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Current Stock</th>
+                <th>Expected Demand</th>
+                <th>Excess Units</th>
+                <th>Trapped Capital ($)</th>
+                <th>Suggested Action</th>
+                <th>Execute Option</th>
+              </tr>
+            </thead>
+            <tbody id="overstock-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Scanning inventory for overstock…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. WHAT-IF SIMULATION VIEW -->
+    <div id="view-simulation" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="dot"></span>What-If Sensitivity Simulation</div>
+            <div class="card-subtitle">Test price, discount, promotion, and lead time strategies to predict demand and revenue impact</div>
+          </div>
+        </div>
+
+        <div class="charts-grid-2">
+          <!-- Parameter controls -->
+          <div>
+            <div class="form-grid">
+              <div class="form-group full">
+                <label>Select Base Product for Simulation</label>
+                <select id="sim-product-select" onchange="populateSimulationDefaults()"></select>
+              </div>
+
+              <div class="form-group">
+                <label>Price ($)</label>
+                <input type="number" id="sim-price" step="0.5" value="49.99" />
+              </div>
+
+              <div class="form-group">
+                <label>Current Stock</label>
+                <input type="number" id="sim-stock" value="100" />
+              </div>
+
+              <div class="form-group">
+                <label>Lead Time (Days)</label>
+                <input type="number" id="sim-leadtime" value="7" />
+              </div>
+
+              <div class="form-group">
+                <label>Supplier Reliability</label>
+                <input type="number" id="sim-reliability" step="0.05" min="0.5" max="1.0" value="0.90" />
+              </div>
+            </div>
+
+            <div style="margin-top:20px;display:flex;gap:10px;">
+              <button class="btn btn-primary" onclick="runWhatIfAnalysis()">⟡ Run Sensitivity Scenarios</button>
+            </div>
+          </div>
+
+          <!-- Scenario Comparison Chart -->
+          <div>
+            <div class="chart-box">
+              <canvas id="chart-simulation"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Comparison Table -->
+        <div style="margin-top:24px;">
+          <div class="table-responsive">
+            <table id="simulation-table">
+              <thead>
+                <tr>
+                  <th>Scenario</th>
+                  <th>Discount %</th>
+                  <th>Unit Price</th>
+                  <th>Predicted Demand</th>
+                  <th>Projected Revenue</th>
+                  <th>Reorder Needed</th>
+                  <th>Recommended Order</th>
+                </tr>
+              </thead>
+              <tbody id="simulation-tbody">
+                <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Run simulation to view sensitivity matrix</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. SINGLE ML PREDICTOR VIEW (Original Preserved Feature) -->
+    <div id="view-single-prediction" class="view-section">
+      <div class="grid-2" style="display:grid;grid-template-columns:1fr 420px;gap:24px;">
+        <!-- Single Prediction Form -->
+        <div class="card">
+          <div class="card-title"><span class="dot"></span>Single Product ML Inference Engine</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Product Category</label>
+              <select id="f-category"></select>
+            </div>
+
+            <div class="form-group">
+              <label>Season</label>
+              <select id="f-season"></select>
+            </div>
+
+            <div class="form-group">
+              <label>Promotion Type</label>
+              <select id="f-promo"></select>
+            </div>
+
+            <div class="form-group">
+              <label>Month (1–12)</label>
+              <input type="number" id="f-month" min="1" max="12" value="6" />
+            </div>
+
+            <div class="form-group">
+              <label>Day of Week (0=Mon)</label>
+              <input type="number" id="f-dow" min="0" max="6" value="2" />
+            </div>
+
+            <div class="form-group">
+              <label>Unit Price ($)</label>
+              <input type="number" id="f-price" min="1" max="1000" step="0.5" value="49.99" />
+            </div>
+
+            <div class="form-group full">
+              <label>Discount %</label>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <input type="range" id="f-discount" min="0" max="50" step="1" value="10" oninput="document.getElementById('discount-val').textContent=this.value+'%'" style="flex:1;" />
+                <span id="discount-val" style="font-family:'DM Mono',monospace;color:var(--accent);min-width:40px;">10%</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Current Stock Level</label>
+              <input type="number" id="f-stock" min="0" value="120" />
+            </div>
+
+            <div class="form-group">
+              <label>Reorder Point</label>
+              <input type="number" id="f-reorder" min="0" value="50" />
+            </div>
+
+            <div class="form-group">
+              <label>Lead Time (days)</label>
+              <input type="number" id="f-leadtime" min="1" max="90" value="7" />
+            </div>
+
+            <div class="form-group">
+              <label>Historical Avg Demand</label>
+              <input type="number" id="f-hist" min="1" value="150" />
+            </div>
+
+            <div class="form-group full">
+              <label>Demand Trend (-0.3 to 0.3)</label>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <input type="range" id="f-trend" min="-30" max="30" step="1" value="5" oninput="document.getElementById('trend-val').textContent=(this.value/100).toFixed(2)" style="flex:1;" />
+                <span id="trend-val" style="font-family:'DM Mono',monospace;color:var(--accent);min-width:40px;">0.05</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Supplier Reliability</label>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <input type="range" id="f-reliability" min="50" max="100" step="1" value="85" oninput="document.getElementById('rel-val').textContent=(this.value/100).toFixed(2)" style="flex:1;" />
+                <span id="rel-val" style="font-family:'DM Mono',monospace;color:var(--accent);min-width:40px;">0.85</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Customer Rating</label>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <input type="range" id="f-rating" min="10" max="50" step="1" value="42" oninput="document.getElementById('rating-val').textContent=(this.value/10).toFixed(1)+'★'" style="flex:1;" />
+                <span id="rating-val" style="font-family:'DM Mono',monospace;color:var(--accent);min-width:40px;">4.2★</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Number of Reviews</label>
+              <input type="number" id="f-reviews" min="0" value="320" />
+            </div>
+
+            <div class="form-group">
+              <label>Competitor Price Ratio</label>
+              <input type="number" id="f-comp" step="0.05" value="1.00" />
+            </div>
+
+            <div class="form-group full">
+              <label>Holiday Week?</label>
+              <select id="f-holiday">
+                <option value="0">No Regular Week</option>
+                <option value="1">Yes Holiday Shopping Week</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" id="btn-predict-single" onclick="runSinglePredict()" style="width:100%;margin-top:24px;padding:14px;">
+            ⟡ Execute Demand Prediction
+          </button>
+        </div>
+
+        <!-- Result Box -->
+        <div>
+          <div class="card" id="single-result-panel">
+            <div class="card-title"><span class="dot"></span>Prediction Result</div>
+            <div id="single-result-content" style="text-align:center;padding:40px 10px;color:var(--muted);">
+              Configure parameters and click Execute Demand Prediction
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. SUPPLIERS VIEW -->
+    <div id="view-suppliers" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="dot"></span>Supplier Reliability & Performance Directory</div>
+            <div class="card-subtitle">Manage suppliers, track average lead times, reliability scores, and on-time delivery</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openAddSupplierModal()">+ Add Supplier</button>
+        </div>
+
+        <div class="table-responsive">
+          <table id="suppliers-table">
+            <thead>
+              <tr>
+                <th>Supplier ID</th>
+                <th>Supplier Name</th>
+                <th>Contact</th>
+                <th>Lead Time</th>
+                <th>Reliability Score</th>
+                <th>On-Time Delivery</th>
+                <th>Quality Rating</th>
+                <th>SKUs Supplied</th>
+              </tr>
+            </thead>
+            <tbody id="suppliers-tbody">
+              <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">Loading suppliers directory…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. BUSINESS & SEASONAL EVENTS VIEW -->
+    <div id="view-events" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="dot"></span>Seasonal, Festival & Promotional Business Events</div>
+            <div class="card-subtitle">Configure business calendars (Diwali, Black Friday, School Reopening, etc.) to adjust demand uplift</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openAddEventModal()">+ Add Business Event</button>
+        </div>
+
+        <div class="table-responsive">
+          <table id="events-table">
+            <thead>
+              <tr>
+                <th>Event Name</th>
+                <th>Dates</th>
+                <th>Category Affected</th>
+                <th>Demand Uplift</th>
+                <th>Promotion Applied</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="events-tbody">
+              <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">Loading configured events…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. REAL DATA UPLOAD VIEW -->
+    <div id="view-upload" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="dot"></span>Upload Real Business Inventory & Sales Data</div>
+            <div class="card-subtitle">Upload your Excel (.xlsx) or CSV file with rigorous row-by-row validation & automated cleaning</div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <a href="/api/template/download?format=xlsx" class="btn btn-outline btn-sm">↓ Download Excel Template</a>
+            <a href="/api/template/download?format=csv" class="btn btn-outline btn-sm">↓ Download CSV Template</a>
+          </div>
+        </div>
+
+        <!-- Dropzone -->
+        <div class="dropzone" id="file-dropzone" onclick="document.getElementById('file-upload-input').click()">
+          <div class="dropzone-icon">⇪</div>
+          <h3 style="font-size:16px;margin-bottom:6px;">Drag and drop your Excel or CSV file here</h3>
+          <p style="color:var(--muted);font-size:13px;">Supports .xlsx, .xls, and .csv files up to 32MB</p>
+          <input type="file" id="file-upload-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleFileSelected(event)" />
+        </div>
+
+        <!-- Selected file indicator & submit -->
+        <div id="upload-action-box" style="display:none;margin-top:20px;padding:16px;background:var(--surface);border-radius:12px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:24px;">📄</span>
+            <div>
+              <div id="upload-filename" style="font-weight:600;font-size:14px;">filename.xlsx</div>
+              <div id="upload-filesize" style="font-size:12px;color:var(--muted);">0 KB</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btn-submit-upload" onclick="submitDataUpload()">
+            Validate & Process Data
+          </button>
+        </div>
+
+        <!-- Validation Results Box -->
+        <div id="upload-results-box" style="display:none;margin-top:24px;">
+          <div id="upload-alert-banner"></div>
+          <div id="upload-error-list" style="margin-top:14px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. REPORTS & EXPORTS VIEW -->
+    <div id="view-reports" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="dot"></span>Enterprise Report Generation & Export Center</div>
+            <div class="card-subtitle">Generate production-grade reports in Excel (.xlsx), CSV, and PDF formats</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:20px;">
+          <!-- Card 1 -->
+          <div class="card" style="margin-bottom:0;background:var(--surface);">
+            <h3 style="font-size:16px;margin-bottom:6px;">Demand Forecast & Optimization</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:18px;">Product-level forecast demands, safety stocks, reorder points, and statuses.</p>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('forecast', 'xlsx')">Excel (.xlsx)</button>
+              <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('forecast', 'csv')">CSV</button>
+              <button class="btn btn-primary btn-sm" onclick="exportCurrentReport('forecast', 'pdf')">PDF</button>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="card" style="margin-bottom:0;background:var(--surface);">
+            <h3 style="font-size:16px;margin-bottom:6px;">Reorder Recommendations</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:18px;">Prioritized procurement restock list with recommended quantities and lead times.</p>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('reorder', 'xlsx')">Excel (.xlsx)</button>
+              <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('reorder', 'csv')">CSV</button>
+              <button class="btn btn-primary btn-sm" onclick="exportCurrentReport('reorder', 'pdf')">PDF</button>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="card" style="margin-bottom:0;background:var(--surface);">
+            <h3 style="font-size:16px;margin-bottom:6px;">Overstock & Capital Recovery</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:18px;">Identifies trapped capital and specific discount/bundling mitigation strategies.</p>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('overstock', 'xlsx')">Excel (.xlsx)</button>
+              <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('overstock', 'csv')">CSV</button>
+              <button class="btn btn-primary btn-sm" onclick="exportCurrentReport('overstock', 'pdf')">PDF</button>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="card" style="margin-bottom:0;background:var(--surface);">
+            <h3 style="font-size:16px;margin-bottom:6px;">Supplier Performance Matrix</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:18px;">Vendor lead time compliance, reliability ratings, and delivery statistics.</p>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('suppliers', 'xlsx')">Excel (.xlsx)</button>
+              <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('suppliers', 'csv')">CSV</button>
+              <button class="btn btn-primary btn-sm" onclick="exportCurrentReport('suppliers', 'pdf')">PDF</button>
+            </div>
+          </div>
+
+          <!-- Card 5 -->
+          <div class="card" style="margin-bottom:0;background:var(--surface);">
+            <h3 style="font-size:16px;margin-bottom:6px;">ML Model Performance Audit</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:18px;">Historical model accuracy benchmarks, MAE, RMSE, and R² validation tracking.</p>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('performance', 'xlsx')">Excel (.xlsx)</button>
+              <button class="btn btn-outline btn-sm" onclick="exportCurrentReport('performance', 'csv')">CSV</button>
+              <button class="btn btn-primary btn-sm" onclick="exportCurrentReport('performance', 'pdf')">PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 12. ML MODEL PERFORMANCE & RETRAINING VIEW -->
+    <div id="view-model" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><span class="dot"></span>Machine Learning Model Performance & Retraining</div>
+            <div class="card-subtitle">Real-time model accuracy metrics, feature importances, and validated retraining pipeline</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="triggerModelRetrain()">⟡ Retrain Model on Latest Data</button>
+        </div>
+
+        <!-- Metrics -->
+        <div class="kpi-grid">
+          <div class="kpi-card" style="--kpi-bar: #7c6dfa;">
+            <div class="kpi-label">Model R² Score</div>
+            <div class="kpi-value" id="model-r2">—</div>
+            <div class="kpi-sub">Variance explained</div>
+          </div>
+          <div class="kpi-card" style="--kpi-bar: #38bdf8;">
+            <div class="kpi-label">MAE (Mean Abs Error)</div>
+            <div class="kpi-value" id="model-mae">—</div>
+            <div class="kpi-sub">Units per prediction</div>
+          </div>
+          <div class="kpi-card" style="--kpi-bar: #6dfac8;">
+            <div class="kpi-label">RMSE</div>
+            <div class="kpi-value" id="model-rmse">—</div>
+            <div class="kpi-sub">Root mean sq error</div>
+          </div>
+          <div class="kpi-card" style="--kpi-bar: #fa6d9a;">
+            <div class="kpi-label">MAPE</div>
+            <div class="kpi-value" id="model-mape">—</div>
+            <div class="kpi-sub">Mean percentage error</div>
+          </div>
+        </div>
+
+        <!-- Feature Importances & Actual vs Predicted -->
+        <div class="charts-grid-2">
+          <div class="card" style="background:var(--surface);">
+            <div class="card-title"><span class="dot"></span>Feature Importance — Top Demand Drivers</div>
+            <div class="chart-box" style="height:320px;">
+              <canvas id="chart-feature-importance"></canvas>
+            </div>
+          </div>
+
+          <div class="card" style="background:var(--surface);">
+            <div class="card-title"><span class="dot"></span>Actual vs Predicted Demand Audit</div>
+            <div class="table-responsive" style="max-height:320px;overflow-y:auto;">
+              <table id="model-actual-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Date</th>
+                    <th>Actual Sales</th>
+                    <th>Predicted</th>
+                    <th>Error</th>
+                  </tr>
+                </thead>
+                <tbody id="model-actual-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Model Retraining History -->
+        <div class="card" style="background:var(--surface);margin-bottom:0;">
+          <div class="card-title"><span class="dot"></span>Historical Model Evaluation Log</div>
+          <div class="table-responsive">
+            <table id="model-history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Model Version</th>
+                  <th>R² Score</th>
+                  <th>MAE</th>
+                  <th>RMSE</th>
+                  <th>MAPE</th>
+                  <th>Dataset Type</th>
+                  <th>Samples</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody id="model-history-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL: Product Details & Multi-Horizon Projections -->
+<div class="modal-overlay" id="product-detail-modal">
+  <div class="modal-card" style="max-width:850px;">
+    <button class="modal-close" onclick="closeProductDetailModal()">×</button>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+      <span class="badge badge-normal" id="detail-category-badge">Category</span>
+      <h2 id="detail-product-name" style="font-family:'Syne',sans-serif;font-size:22px;">Product Details</h2>
+    </div>
+
+    <!-- Details KPI row -->
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+      <div class="kpi-card" style="padding:14px;">
+        <div class="kpi-label">Current Stock</div>
+        <div class="kpi-value" id="detail-stock" style="font-size:20px;">—</div>
+      </div>
+      <div class="kpi-card" style="padding:14px;">
+        <div class="kpi-label">Forecast Demand (30d)</div>
+        <div class="kpi-value" id="detail-forecast" style="font-size:20px;">—</div>
+      </div>
+      <div class="kpi-card" style="padding:14px;">
+        <div class="kpi-label">Safety Stock</div>
+        <div class="kpi-value" id="detail-safetystock" style="font-size:20px;">—</div>
+      </div>
+      <div class="kpi-card" style="padding:14px;">
+        <div class="kpi-label">Reorder Point</div>
+        <div class="kpi-value" id="detail-rop" style="font-size:20px;">—</div>
+      </div>
+    </div>
+
+    <!-- Horizon selector for details -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-weight:600;font-size:14px;">Multi-Horizon Projections</div>
+      <div class="horizon-pills">
+        <button class="horizon-btn" onclick="switchDetailHorizon(7, this)">7 Days</button>
+        <button class="horizon-btn active" onclick="switchDetailHorizon(30, this)">30 Days</button>
+        <button class="horizon-btn" onclick="switchDetailHorizon(90, this)">90 Days</button>
+      </div>
+    </div>
+
+    <!-- Horizon Summary Box -->
+    <div id="detail-horizon-box" style="background:var(--surface);padding:16px;border-radius:12px;margin-bottom:20px;border:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span style="color:var(--muted);font-size:12px;">Horizon Demand:</span>
+          <strong id="detail-h-demand" style="font-size:18px;color:var(--accent-light);margin-left:6px;">—</strong>
+        </div>
+        <div>
+          <span style="color:var(--muted);font-size:12px;">Recommended Reorder:</span>
+          <strong id="detail-h-reorder" style="font-size:18px;color:var(--warning);margin-left:6px;">—</strong>
+        </div>
+        <div>
+          <span style="color:var(--muted);font-size:12px;">Status:</span>
+          <span id="detail-h-status" class="badge badge-normal" style="margin-left:6px;">Normal</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div style="margin-bottom:20px;">
+      <div style="font-weight:600;font-size:14px;margin-bottom:10px;">Historical Sales vs Forecast Trend</div>
+      <div class="chart-box" style="height:240px;">
+        <canvas id="chart-product-detail"></canvas>
+      </div>
+    </div>
+
+    <!-- Supplier & Info metadata -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:12px;color:var(--text-dim);background:var(--surface);padding:14px;border-radius:10px;">
+      <div>Supplier: <strong id="detail-supplier" style="color:#fff;">—</strong></div>
+      <div>Lead Time: <strong id="detail-leadtime" style="color:#fff;">—</strong></div>
+      <div>Supplier Reliability: <strong id="detail-reliability" style="color:#fff;">—</strong></div>
+      <div>Unit Price / Cost: <strong id="detail-price-cost" style="color:#fff;">—</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Product -->
+<div class="modal-overlay" id="add-product-modal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeAddProductModal()">×</button>
+    <div class="card-title" style="margin-bottom:20px;"><span class="dot"></span>Add New Inventory Product</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Product ID (SKU)</label>
+        <input type="text" id="new-p-id" placeholder="e.g. PRD-901" />
+      </div>
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="new-p-name" placeholder="e.g. Wireless Ergonomic Trackball" />
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="new-p-cat"></select>
+      </div>
+      <div class="form-group">
+        <label>Unit Price ($)</label>
+        <input type="number" id="new-p-price" step="0.5" value="49.99" />
+      </div>
+      <div class="form-group">
+        <label>Unit Cost ($)</label>
+        <input type="number" id="new-p-cost" step="0.5" value="24.99" />
+      </div>
+      <div class="form-group">
+        <label>Initial Stock</label>
+        <input type="number" id="new-p-stock" value="100" />
+      </div>
+      <div class="form-group">
+        <label>Reorder Point</label>
+        <input type="number" id="new-p-rop" value="40" />
+      </div>
+      <div class="form-group">
+        <label>Lead Time (Days)</label>
+        <input type="number" id="new-p-leadtime" value="7" />
+      </div>
+      <div class="form-group full">
+        <label>Supplier ID</label>
+        <input type="text" id="new-p-supplier" value="SUP-001" />
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:20px;" onclick="saveNewProduct()">Save Product</button>
+  </div>
+</div>
+
+<!-- MODAL: Add Event -->
+<div class="modal-overlay" id="add-event-modal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeAddEventModal()">×</button>
+    <div class="card-title" style="margin-bottom:20px;"><span class="dot"></span>Add Seasonal / Promotional Event</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Event Name</label>
+        <input type="text" id="new-ev-name" placeholder="e.g. Holiday Season Mega Sale" />
+      </div>
+      <div class="form-group">
+        <label>Start Date</label>
+        <input type="date" id="new-ev-start" />
+      </div>
+      <div class="form-group">
+        <label>End Date</label>
+        <input type="date" id="new-ev-end" />
+      </div>
+      <div class="form-group">
+        <label>Category Affected</label>
+        <select id="new-ev-cat">
+          <option value="All">All Categories</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Demand Uplift %</label>
+        <input type="number" id="new-ev-uplift" value="25" />
+      </div>
+      <div class="form-group">
+        <label>Promotion Type</label>
+        <select id="new-ev-promo">
+          <option value="Discount">Discount</option>
+          <option value="Flash Sale">Flash Sale</option>
+          <option value="Bundle">Bundle</option>
+          <option value="BOGO">BOGO</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Description</label>
+        <textarea id="new-ev-desc" rows="2" placeholder="Notes on promotional campaign..."></textarea>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:20px;" onclick="saveNewEvent()">Save Event</button>
+  </div>
+</div>
+
+<!-- MODAL: Add Supplier -->
+<div class="modal-overlay" id="add-supplier-modal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeAddSupplierModal()">×</button>
+    <div class="card-title" style="margin-bottom:20px;"><span class="dot"></span>Add New Supplier</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Supplier Name</label>
+        <input type="text" id="new-sup-name" placeholder="e.g. Apex Global Supply" />
+      </div>
+      <div class="form-group">
+        <label>Contact Email</label>
+        <input type="email" id="new-sup-email" placeholder="contact@supplier.com" />
+      </div>
+      <div class="form-group">
+        <label>Lead Time (Days)</label>
+        <input type="number" id="new-sup-leadtime" value="7" />
+      </div>
+      <div class="form-group">
+        <label>Reliability Score (0.5 to 1.0)</label>
+        <input type="number" id="new-sup-reliability" step="0.05" min="0.5" max="1.0" value="0.90" />
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:20px;" onclick="saveNewSupplier()">Save Supplier</button>
+  </div>
+</div>
+
+<!-- MODAL: User Login & Quick Role Switch -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal-card" style="max-width:440px;">
+    <button class="modal-close" onclick="closeLoginModal()">×</button>
+    <div class="card-title" style="margin-bottom:12px;"><span class="dot"></span>Account Authentication</div>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Sign in to access role-specific permissions and management tools.</p>
+    
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Username</label>
+      <input type="text" id="login-username" value="admin" />
+    </div>
+    <div class="form-group" style="margin-bottom:18px;">
+      <label>Password</label>
+      <input type="password" id="login-password" value="admin123" />
+    </div>
+    <button class="btn btn-primary" style="width:100%;" onclick="submitLogin()">Sign In</button>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+      <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:8px;">1-CLICK DEMO CREDENTIALS:</div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-outline btn-sm" onclick="setLoginQuick('admin','admin123')">Admin</button>
+        <button class="btn btn-outline btn-sm" onclick="setLoginQuick('manager','manager123')">Manager</button>
+        <button class="btn btn-outline btn-sm" onclick="setLoginQuick('staff','staff123')">Staff</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Application Core Logic -->
+<script>
+// State Management
+const appState = {
+  user: null,
+  currentTab: 'dashboard',
+  currentHorizon: 30,
+  dataSource: 'all',
+  metadata: null,
+  products: [],
+  forecasts: [],
+  kpis: null,
+  alerts: [],
+  suppliers: [],
+  events: [],
+  charts: {},
+  selectedProductDetail: null
+};
+
+// Initialize Application
+async function initApp() {
+  try {
+    await checkAuth();
+    await loadMetadata();
+    await refreshAllData();
+  } catch(e) {
+    console.error('Initialization error:', e);
+    showToast('Failed to initialize application data', 'error');
+  }
+}
+
+// Auth API
+async function checkAuth() {
+  try {
+    const res = await fetch('/api/auth/me');
+    const data = await res.json();
+    appState.user = data.user;
+    updateUserUI();
+  } catch(e) {
+    appState.user = { id: 0, username: 'admin', role: 'admin', full_name: 'System Admin' };
+    updateUserUI();
+  }
+}
+
+function updateUserUI() {
+  if (!appState.user) return;
+  const nameEl = document.getElementById('user-display-name');
+  const roleEl = document.getElementById('user-role-badge');
+  const avatarEl = document.getElementById('avatar-initials');
+  
+  nameEl.textContent = appState.user.full_name || appState.user.username;
+  roleEl.textContent = (appState.user.role || 'ADMIN').toUpperCase();
+  roleEl.className = 'user-role-badge role-' + (appState.user.role || 'admin');
+  avatarEl.textContent = (appState.user.full_name || 'A')[0].toUpperCase();
+}
+
+async function submitLogin() {
+  const u = document.getElementById('login-username').value;
+  const p = document.getElementById('login-password').value;
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username: u, password: p})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    appState.user = data.user;
+    updateUserUI();
+    closeLoginModal();
+    showToast(`Welcome back, ${data.user.full_name}!`, 'success');
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+function setLoginQuick(u, p) {
+  document.getElementById('login-username').value = u;
+  document.getElementById('login-password').value = p;
+  submitLogin();
+}
+
+function openLoginModal() { document.getElementById('login-modal').classList.add('open'); }
+function closeLoginModal() { document.getElementById('login-modal').classList.remove('open'); }
+
+// Metadata & Dropdowns
+async function loadMetadata() {
+  const res = await fetch('/api/metadata');
+  appState.metadata = await res.json();
+
+  // Populate Categories
+  const catSelects = ['forecast-cat-filter', 'products-cat-filter', 'f-category', 'new-p-cat', 'new-ev-cat'];
+  catSelects.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const currentVal = el.value;
+    appState.metadata.categories.forEach(c => {
+      if (!Array.from(el.options).some(o => o.value === c)) {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        el.appendChild(opt);
+      }
+    });
+    if (currentVal) el.value = currentVal;
+  });
+
+  // Populate Seasons & Promo for single predict
+  populateSelect('f-season', appState.metadata.seasons);
+  populateSelect('f-promo', appState.metadata.promotion_types);
+
+  // Model Page initial metrics
+  document.getElementById('model-r2').textContent = appState.metadata.metrics.r2;
+  document.getElementById('model-mae').textContent = `${appState.metadata.metrics.mae} units`;
+  document.getElementById('model-rmse').textContent = `${appState.metadata.metrics.rmse} units`;
+  document.getElementById('model-mape').textContent = `${appState.metadata.metrics.mape}%`;
+}
+
+function populateSelect(id, items) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '';
+  items.forEach(it => {
+    const opt = document.createElement('option');
+    opt.value = it; opt.textContent = it;
+    el.appendChild(opt);
+  });
+}
+
+// Master Data Refresh
+async function refreshAllData() {
+  await Promise.all([
+    fetchKPIs(),
+    fetchForecasts(),
+    fetchProducts(),
+    fetchAlerts(),
+    fetchSuppliers(),
+    fetchEvents(),
+    fetchModelPerformance()
+  ]);
+}
+
+// 1. Dashboard & KPIs
+async function fetchKPIs() {
+  const res = await fetch(`/api/inventory?horizon=${appState.currentHorizon}`);
+  appState.kpis = await res.json();
+
+  const k = appState.kpis.kpis;
+  document.getElementById('kpi-total-products').textContent = k.total_products;
+  document.getElementById('kpi-total-inventory').textContent = k.total_inventory.toLocaleString();
+  document.getElementById('kpi-expected-demand').textContent = k.expected_demand.toLocaleString();
+  document.getElementById('kpi-low-stock').textContent = k.low_stock_products;
+  document.getElementById('kpi-overstock').textContent = k.overstock_products;
+  document.getElementById('kpi-reorder-count').textContent = k.products_to_reorder;
+  document.getElementById('kpi-inventory-value').textContent = `$${(k.inventory_value).toLocaleString()}`;
+
+  // Overstock view KPIs
+  document.getElementById('overstock-sku-count').textContent = k.overstock_products;
+  document.getElementById('overstock-trapped-capital').textContent = `$${(k.tied_up_excess_capital).toLocaleString()}`;
+
+  renderDashboardCharts(appState.kpis);
+  renderDashboardUrgentTable(appState.kpis.urgent_reorder);
+}
+
+function renderDashboardUrgentTable(items) {
+  const tbody = document.querySelector('#dashboard-urgent-table tbody');
+  if (!items || !items.length) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--normal)">✓ All products are sufficiently stocked. No urgent restocks needed.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = items.map(p => `
+    <tr>
+      <td><strong>${p.name}</strong><br><span style="font-size:11px;color:var(--muted)">${p.product_id}</span></td>
+      <td>${p.category}</td>
+      <td><span style="font-weight:600;color:${p.current_stock < 10 ? 'var(--critical)' : 'inherit'}">${p.current_stock}</span></td>
+      <td>${p.forecast_demand}</td>
+      <td>${p.safety_stock}</td>
+      <td>${p.lead_time_days} days</td>
+      <td><strong style="color:var(--accent-light)">${p.recommended_order_qty}</strong></td>
+      <td>${p.supplier_name}</td>
+      <td><span class="badge ${p.status === 'Critical' ? 'badge-critical' : 'badge-low'}">${p.status}</span></td>
+      <td><button class="btn btn-outline btn-sm" onclick="openProductDetail('${p.product_id}')">Details</button></td>
+    </tr>
+  `).join('');
+}
+
+// 2. Forecasts Table
+async function fetchForecasts() {
+  const res = await fetch(`/api/forecasts?horizon=${appState.currentHorizon}`);
+  const data = await res.json();
+  appState.forecasts = data.forecasts;
+  renderForecastsTable(appState.forecasts);
+  renderOverstockTable(appState.forecasts);
+  populateSimulationSelect(appState.forecasts);
+}
+
+function renderForecastsTable(list) {
+  const tbody = document.getElementById('forecasts-tbody');
+  document.getElementById('forecast-count-label').textContent = `Showing ${list.length} products`;
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--muted)">No matching products found.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(f => {
+    let badgeClass = 'badge-normal';
+    if (f.status === 'Critical') badgeClass = 'badge-critical';
+    else if (f.status === 'Low Stock') badgeClass = 'badge-low';
+    else if (f.status === 'Overstock') badgeClass = 'badge-overstock';
+
+    return `
+      <tr>
+        <td><strong>${f.name}</strong><br><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);">${f.product_id}</span></td>
+        <td>${f.category}</td>
+        <td><strong>${f.current_stock}</strong></td>
+        <td>${f.forecast_demand}</td>
+        <td>${f.safety_stock}</td>
+        <td>${f.reorder_point}</td>
+        <td><strong style="color:${f.recommended_order_qty > 0 ? 'var(--accent-light)' : 'var(--muted)'}">${f.recommended_order_qty}</strong></td>
+        <td>${f.days_of_stock}d</td>
+        <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent3)">${f.confidence_score}%</span></td>
+        <td><span class="badge ${badgeClass}">${f.status}</span></td>
+        <td><button class="btn btn-outline btn-sm" onclick="openProductDetail('${f.product_id}')">View</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterForecastsTable() {
+  const q = document.getElementById('forecast-search').value.toLowerCase();
+  const cat = document.getElementById('forecast-cat-filter').value;
+  const stat = document.getElementById('forecast-status-filter').value;
+
+  const filtered = appState.forecasts.filter(f => {
+    const matchSearch = f.name.toLowerCase().includes(q) || f.product_id.toLowerCase().includes(q);
+    const matchCat = cat === 'All' || f.category === cat;
+    const matchStat = stat === 'All' || f.status === stat;
+    return matchSearch && matchCat && matchStat;
+  });
+  renderForecastsTable(filtered);
+}
+
+function setHorizon(days, btn) {
+  appState.currentHorizon = days;
+  document.querySelectorAll('.horizon-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  fetchKPIs();
+  fetchForecasts();
+}
+
+// 3. Products Catalog
+async function fetchProducts() {
+  const res = await fetch('/api/products');
+  appState.products = await res.json();
+  renderProductsTable(appState.products);
+}
+
+function renderProductsTable(list) {
+  const tbody = document.getElementById('products-tbody');
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td><span style="font-family:'DM Mono',monospace;color:var(--accent-light)">${p.product_id}</span></td>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.category}</td>
+      <td>$${Number(p.price).toFixed(2)}</td>
+      <td>$${Number(p.cost).toFixed(2)}</td>
+      <td><strong>${p.current_stock}</strong></td>
+      <td>${p.reorder_point}</td>
+      <td>${p.lead_time_days} days</td>
+      <td>${p.supplier_name || p.supplier_id}</td>
+      <td>★ ${p.customer_rating}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="openProductDetail('${p.product_id}')">Inspect</button></td>
+    </tr>
+  `).join('');
+}
+
+function filterProductsTable() {
+  const q = document.getElementById('products-search').value.toLowerCase();
+  const cat = document.getElementById('products-cat-filter').value;
+  const filtered = appState.products.filter(p => {
+    const matchSearch = p.name.toLowerCase().includes(q) || p.product_id.toLowerCase().includes(q);
+    const matchCat = cat === 'All' || p.category === cat;
+    return matchSearch && matchCat;
+  });
+  renderProductsTable(filtered);
+}
+
+// 4. Alerts
+async function fetchAlerts() {
+  const res = await fetch('/api/alerts');
+  const data = await res.json();
+  appState.alerts = data.alerts;
+  document.getElementById('sidebar-alert-badge').textContent = appState.alerts.length;
+  renderAlertsTable(appState.alerts);
+}
+
+function renderAlertsTable(list) {
+  const tbody = document.getElementById('alerts-tbody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--normal)">✓ Zero active stockout or overstock risks detected.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(a => {
+    let pClass = 'badge-low';
+    if (a.alert_type === 'critical') pClass = 'badge-critical';
+    else if (a.alert_type === 'overstock') pClass = 'badge-overstock';
+    return `
+      <tr>
+        <td><span class="badge ${pClass}">${a.priority}</span></td>
+        <td><strong>${a.product_name}</strong><br><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);">${a.product_id}</span></td>
+        <td>${a.category}</td>
+        <td>Stock: ${a.current_stock} / Demand: ${a.forecast_demand}</td>
+        <td>${a.lead_time_days || '—'}d</td>
+        <td><strong>${a.recommended_order_qty || '0'}</strong></td>
+        <td>${a.supplier_name || 'N/A'}</td>
+        <td style="font-size:12px;color:var(--text-dim);max-width:280px;white-space:normal;">${a.recommended_action}</td>
+        <td><button class="btn btn-outline btn-sm" onclick="openProductDetail('${a.product_id}')">Analyze</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// 5. Overstock
+function renderOverstockTable(forecasts) {
+  const overstockItems = forecasts.filter(f => f.status === 'Overstock');
+  const tbody = document.getElementById('overstock-tbody');
+  const totalUnits = overstockItems.reduce((acc, i) => acc + (i.excess_stock || 0), 0);
+  document.getElementById('overstock-total-units').textContent = totalUnits.toLocaleString();
+
+  if (!overstockItems.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--normal)">✓ No products currently exceed optimal safety stock thresholds.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = overstockItems.map(i => `
+    <tr>
+      <td><strong>${i.name}</strong><br><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);">${i.product_id}</span></td>
+      <td>${i.current_stock}</td>
+      <td>${i.forecast_demand}</td>
+      <td><strong style="color:var(--overstock)">+${i.excess_stock}</strong></td>
+      <td><strong style="color:#ec4899">$${(i.excess_value).toLocaleString()}</strong></td>
+      <td style="font-size:12px;color:var(--text-dim);">${i.suggested_action}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="openProductDetail('${i.product_id}')">Plan Promo</button></td>
+    </tr>
+  `).join('');
+}
+
+// 6. Suppliers
+async function fetchSuppliers() {
+  const res = await fetch('/api/suppliers');
+  appState.suppliers = await res.json();
+  const tbody = document.getElementById('suppliers-tbody');
+  tbody.innerHTML = appState.suppliers.map(s => `
+    <tr>
+      <td><span style="font-family:'DM Mono',monospace;color:var(--accent-light)">${s.supplier_id}</span></td>
+      <td><strong>${s.name}</strong></td>
+      <td>${s.contact_email || '—'}</td>
+      <td>${s.lead_time_days} days</td>
+      <td><strong style="color:var(--accent3)">${(s.reliability_score * 100).toFixed(1)}%</strong></td>
+      <td>${s.on_time_delivery_pct}%</td>
+      <td>★ ${s.quality_rating}</td>
+      <td>${s.products_supplied_count || 0}</td>
+    </tr>
+  `).join('');
+}
+
+// 7. Events
+async function fetchEvents() {
+  const res = await fetch('/api/events');
+  appState.events = await res.json();
+  const tbody = document.getElementById('events-tbody');
+  if (!appState.events.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">No business events configured yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = appState.events.map(e => `
+    <tr>
+      <td><strong>${e.event_name}</strong></td>
+      <td>${e.start_date} → ${e.end_date}</td>
+      <td>${e.category}</td>
+      <td><strong style="color:var(--accent-light)">+${e.demand_uplift_pct}%</strong></td>
+      <td><span class="badge badge-normal">${e.promotion_type}</span></td>
+      <td style="font-size:12px;color:var(--text-dim);">${e.description || '—'}</td>
+      <td><span class="badge badge-normal">${e.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteEvent(${e.id})">Delete</button></td>
+    </tr>
+  `).join('');
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Are you sure you want to delete this event?')) return;
+  await fetch(`/api/events/${id}`, { method: 'DELETE' });
+  showToast('Event removed', 'info');
+  fetchEvents();
+  fetchForecasts();
+}
+
+// 8. Model Performance
+async function fetchModelPerformance() {
+  const res = await fetch('/api/model-performance');
+  const data = await res.json();
+  
+  // Actual vs Predicted table
+  const tbody = document.getElementById('model-actual-tbody');
+  tbody.innerHTML = (data.actual_vs_predicted || []).map(r => `
+    <tr>
+      <td>${r.name}</td>
+      <td>${r.date}</td>
+      <td><strong>${r.actual_sales}</strong></td>
+      <td>${r.predicted_demand}</td>
+      <td><span style="color:${r.error_pct < 15 ? 'var(--normal)' : 'var(--warning)'}">${r.error} (${r.error_pct}%)</span></td>
+    </tr>
+  `).join('');
+
+  // History log
+  const hbody = document.getElementById('model-history-tbody');
+  hbody.innerHTML = (data.history || []).map(h => `
+    <tr>
+      <td>${h.evaluation_date}</td>
+      <td><strong>${h.model_version}</strong></td>
+      <td>${h.r2}</td>
+      <td>${h.mae}</td>
+      <td>${h.rmse}</td>
+      <td>${h.mape}%</td>
+      <td><span class="badge ${h.dataset_type === 'real_business_data' ? 'badge-normal' : 'badge-overstock'}">${h.dataset_type}</span></td>
+      <td>${h.samples_count}</td>
+      <td style="font-size:11px;color:var(--text-dim);">${h.notes || '—'}</td>
+    </tr>
+  `).join('');
+
+  renderFeatureImportanceChart(data.feature_importances);
+}
+
+async function triggerModelRetrain() {
+  if (!confirm('Start ML Model Retraining pipeline on verified historical dataset?')) return;
+  showToast('Retraining candidate Random Forest model...', 'info');
+  try {
+    const res = await fetch('/api/model/retrain', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      showToast(data.message || 'Retraining rejected by validation gate', 'error');
+    } else {
+      showToast(data.message, 'success');
+      loadMetadata();
+      fetchModelPerformance();
+    }
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+// 9. What-If Simulation
+function populateSimulationSelect(forecasts) {
+  const select = document.getElementById('sim-product-select');
+  if (!select) return;
+  select.innerHTML = forecasts.map(f => `<option value="${f.product_id}">${f.name} (${f.product_id})</option>`).join('');
+  populateSimulationDefaults();
+}
+
+function populateSimulationDefaults() {
+  const pid = document.getElementById('sim-product-select').value;
+  const p = appState.forecasts.find(f => f.product_id === pid);
+  if (!p) return;
+  document.getElementById('sim-price').value = p.price;
+  document.getElementById('sim-stock').value = p.current_stock;
+  document.getElementById('sim-leadtime').value = p.lead_time_days;
+  document.getElementById('sim-reliability').value = p.supplier_reliability;
+}
+
+async function runWhatIfAnalysis() {
+  const pid = document.getElementById('sim-product-select').value;
+  const prod = appState.forecasts.find(f => f.product_id === pid) || {};
+
+  const basePrice = parseFloat(document.getElementById('sim-price').value) || 49.99;
+  const stock = parseInt(document.getElementById('sim-stock').value) || 100;
+  const leadtime = parseInt(document.getElementById('sim-leadtime').value) || 7;
+  const rel = parseFloat(document.getElementById('sim-reliability').value) || 0.90;
+
+  const baseParams = {
+    product_category: prod.category || 'Electronics',
+    month: 6,
+    day_of_week: 2,
+    season: 'Summer',
+    price: basePrice,
+    discount_pct: 0,
+    promotion_type: 'None',
+    stock_level: stock,
+    lead_time_days: leadtime,
+    supplier_reliability: rel,
+    historical_avg_demand: prod.historical_avg_demand || 120,
+    demand_trend: 0.05,
+    competitor_price_ratio: 1.0,
+    customer_rating: 4.5,
+    num_reviews: 200,
+    reorder_point: 40,
+    is_holiday_week: 0,
+    region_demand_index: 1.2
+  };
+
+  const scenarios = [
+    { label: 'Baseline (0% Discount)', discount_pct: 0, promotion_type: 'None' },
+    { label: 'Moderate Promotion (10% Off)', discount_pct: 10, promotion_type: 'Discount' },
+    { label: 'Aggressive Promotion (20% Off)', discount_pct: 20, promotion_type: 'Discount' },
+    { label: 'Flash Sale (30% Off)', discount_pct: 30, promotion_type: 'Flash Sale' },
+    { label: 'Cross-Sell Bundle (15% Off)', discount_pct: 15, promotion_type: 'Bundle' }
+  ];
+
+  try {
+    const res = await fetch('/api/simulation', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ base_params: baseParams, scenarios: scenarios })
+    });
+    const data = await res.json();
+    renderSimulationResults(data.simulations);
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+function renderSimulationResults(sims) {
+  const tbody = document.getElementById('simulation-tbody');
+  tbody.innerHTML = sims.map(s => `
+    <tr>
+      <td><strong>${s.label}</strong></td>
+      <td>${s.discount_pct}%</td>
+      <td>$${Number(s.price).toFixed(2)}</td>
+      <td><strong style="color:var(--accent-light);font-size:15px;">${s.predicted_demand.toLocaleString()} units</strong></td>
+      <td><strong style="color:var(--accent3)">$${(s.projected_revenue).toLocaleString()}</strong></td>
+      <td><span class="badge ${s.reorder_needed ? 'badge-low' : 'badge-normal'}">${s.reorder_needed ? 'Yes' : 'Sufficient'}</span></td>
+      <td><strong>${s.recommended_order_qty}</strong></td>
+    </tr>
+  `).join('');
+
+  renderSimulationChart(sims);
+}
+
+// 10. Single Prediction (Preserved)
+async function runSinglePredict() {
+  const btn = document.getElementById('btn-predict-single');
+  btn.textContent = 'Running Random Forest Model...';
+  const payload = {
+    product_category: document.getElementById('f-category').value,
+    season: document.getElementById('f-season').value,
+    promotion_type: document.getElementById('f-promo').value,
+    month: +document.getElementById('f-month').value,
+    day_of_week: +document.getElementById('f-dow').value,
+    price: +document.getElementById('f-price').value,
+    discount_pct: +document.getElementById('f-discount').value,
+    stock_level: +document.getElementById('f-stock').value,
+    reorder_point: +document.getElementById('f-reorder').value,
+    lead_time_days: +document.getElementById('f-leadtime').value,
+    historical_avg_demand: +document.getElementById('f-hist').value,
+    demand_trend: +document.getElementById('f-trend').value / 100,
+    supplier_reliability: +document.getElementById('f-reliability').value / 100,
+    customer_rating: +document.getElementById('f-rating').value / 10,
+    num_reviews: +document.getElementById('f-reviews').value,
+    competitor_price_ratio: +document.getElementById('f-comp').value,
+    region_demand_index: 1.2,
+    is_holiday_week: +document.getElementById('f-holiday').value
+  };
+
+  try {
+    const res = await fetch('/api/predict', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Prediction failed');
+
+    document.getElementById('single-result-content').innerHTML = `
+      <div style="background:rgba(124,109,250,0.08);padding:24px;border-radius:14px;border:1px solid rgba(124,109,250,0.3);margin-bottom:16px;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-family:'DM Mono',monospace;">Predicted Monthly Demand</div>
+        <div style="font-size:48px;font-weight:800;color:#fff;margin:8px 0;font-family:'Syne',sans-serif;">${d.predicted_demand.toLocaleString()}</div>
+        <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;">80% Confidence Interval: <span style="color:var(--accent3)">${d.lower_ci} – ${d.upper_ci}</span> units</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;">
+        <div class="kpi-card" style="padding:14px;">
+          <div class="kpi-label">Recommended Order</div>
+          <div class="kpi-value" style="font-size:18px;color:var(--accent-light)">${d.recommended_order_qty}</div>
+        </div>
+        <div class="kpi-card" style="padding:14px;">
+          <div class="kpi-label">Days of Stock</div>
+          <div class="kpi-value" style="font-size:18px;color:${d.days_of_stock_remaining < 14 ? 'var(--warning)' : 'var(--normal)'}">${d.days_of_stock_remaining}d</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:12px;border-radius:10px;font-size:12px;font-family:'DM Mono',monospace;text-align:left;background:${d.reorder_needed ? 'var(--warning-bg)' : 'var(--normal-bg)'};color:${d.reorder_needed ? 'var(--warning)' : 'var(--normal)'}">
+        ${d.reorder_needed ? `⚠ Stock below reorder point! Order ${d.recommended_order_qty} units.` : `✓ Stock level is sufficient for ~${d.days_of_stock_remaining} days.`}
+      </div>
+    `;
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+  btn.textContent = '⟡ Execute Demand Prediction';
+}
+
+// 11. Data Upload
+let selectedUploadFile = null;
+
+function handleFileSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  selectedUploadFile = file;
+  document.getElementById('upload-action-box').style.display = 'flex';
+  document.getElementById('upload-filename').textContent = file.name;
+  document.getElementById('upload-filesize').textContent = `${(file.size / 1024).toFixed(1)} KB`;
+}
+
+async function submitDataUpload() {
+  if (!selectedUploadFile) return;
+  const btn = document.getElementById('btn-submit-upload');
+  btn.textContent = 'Validating records…';
+  btn.disabled = true;
+
+  const formData = new FormData();
+  formData.append('file', selectedUploadFile);
+
+  try {
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    const resultsBox = document.getElementById('upload-results-box');
+    const banner = document.getElementById('upload-alert-banner');
+    const errList = document.getElementById('upload-error-list');
+    resultsBox.style.display = 'block';
+
+    if (!res.ok || !data.success) {
+      banner.className = 'badge badge-critical';
+      banner.style.padding = '12px 18px';
+      banner.style.borderRadius = '10px';
+      banner.style.display = 'block';
+      banner.textContent = `Upload Error: ${data.message || 'File validation failed'}`;
+      
+      errList.innerHTML = (data.errors || []).map(e => `
+        <div style="padding:8px 12px;background:rgba(239,68,68,0.08);border-left:3px solid var(--critical);margin-bottom:6px;font-size:12px;font-family:'DM Mono',monospace;color:var(--critical);">
+          ${e}
+        </div>
+      `).join('');
+      showToast('Validation errors found. Please review and fix.', 'error');
+    } else {
+      banner.className = 'badge badge-normal';
+      banner.style.padding = '12px 18px';
+      banner.style.borderRadius = '10px';
+      banner.style.display = 'block';
+      banner.textContent = `✓ ${data.message} ${data.duplicates_found > 0 ? `(${data.duplicates_found} duplicates handled)` : ''}`;
+      errList.innerHTML = '';
+      showToast('Real business data successfully imported & committed!', 'success');
+
+      // Update data mode pill
+      document.getElementById('data-mode-indicator').className = 'data-mode-pill real';
+      document.getElementById('data-mode-text').textContent = 'REAL BUSINESS DATA ACTIVE';
+      refreshAllData();
+    }
+  } catch(e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.textContent = 'Validate & Process Data';
+    btn.disabled = false;
+  }
+}
+
+// 12. Product Details Modal
+async function openProductDetail(productId) {
+  try {
+    const res = await fetch(`/api/products/${productId}/details`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    appState.selectedProductDetail = data;
+    const p = data.product;
+
+    document.getElementById('detail-product-name').textContent = p.name;
+    document.getElementById('detail-category-badge').textContent = p.category;
+    document.getElementById('detail-stock').textContent = p.current_stock;
+    document.getElementById('detail-supplier').textContent = p.supplier_name || p.supplier_id;
+    document.getElementById('detail-leadtime').textContent = `${p.lead_time_days} days`;
+    document.getElementById('detail-reliability').textContent = `${((p.supplier_reliability || 0.88)*100).toFixed(1)}%`;
+    document.getElementById('detail-price-cost').textContent = `$${Number(p.price).toFixed(2)} / $${Number(p.cost).toFixed(2)}`;
+
+    updateDetailHorizonDisplay(30);
+    renderProductDetailChart(data.historical_sales, data.forecast_horizons);
+    document.getElementById('product-detail-modal').classList.add('open');
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+function closeProductDetailModal() {
+  document.getElementById('product-detail-modal').classList.remove('open');
+}
+
+function switchDetailHorizon(days, btn) {
+  document.querySelectorAll('#product-detail-modal .horizon-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateDetailHorizonDisplay(days);
+}
+
+function updateDetailHorizonDisplay(days) {
+  if (!appState.selectedProductDetail) return;
+  const fc = appState.selectedProductDetail.forecast_horizons[`${days}_days`];
+  if (!fc) return;
+
+  document.getElementById('detail-forecast').textContent = fc.forecast_demand;
+  document.getElementById('detail-safetystock').textContent = fc.safety_stock;
+  document.getElementById('detail-rop').textContent = fc.reorder_point;
+  document.getElementById('detail-h-demand').textContent = `${fc.forecast_demand} units (${days}d)`;
+  document.getElementById('detail-h-reorder').textContent = `${fc.recommended_order_qty} units`;
+  
+  const stEl = document.getElementById('detail-h-status');
+  stEl.textContent = fc.status;
+  stEl.className = 'badge ' + (fc.status === 'Critical' ? 'badge-critical' : (fc.status === 'Low Stock' ? 'badge-low' : (fc.status === 'Overstock' ? 'badge-overstock' : 'badge-normal')));
+}
+
+// 13. Reports Export
+function exportCurrentReport(type, format) {
+  window.location.href = `/api/reports/export?type=${type}&format=${format}`;
+  showToast(`Exporting ${type} report as ${format.toUpperCase()}...`, 'info');
+}
+
+// 14. Demo Reload
+async function reloadDemoData() {
+  if (!confirm('Reload default realistic demo dataset?')) return;
+  showToast('Reloading demo dataset...', 'info');
+  await fetch('/api/demo/load', { method: 'POST' });
+  document.getElementById('data-mode-indicator').className = 'data-mode-pill demo';
+  document.getElementById('data-mode-text').textContent = 'DEMO DATA MODE';
+  showToast('Demo dataset loaded successfully', 'success');
+  refreshAllData();
+}
+
+// Navigation Switcher
+function switchNav(tabId) {
+  appState.currentTab = tabId;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+
+  const targetNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.getAttribute('onclick') && el.getAttribute('onclick').includes(tabId));
+  if (targetNav) targetNav.classList.add('active');
+
+  const view = document.getElementById(`view-${tabId}`);
+  if (view) view.classList.add('active');
+
+  // Title update
+  const titles = {
+    dashboard: 'Executive Demand & Inventory Dashboard',
+    forecasts: 'Multi-Product Demand Forecasting',
+    products: 'Product Inventory Catalog',
+    alerts: 'Operational Restock Alerts',
+    overstock: 'Overstock & Working Capital Optimization',
+    simulation: 'What-If Sensitivity Simulation',
+    'single-prediction': 'Single Product ML Predictor',
+    suppliers: 'Supplier Performance & Reliability',
+    events: 'Seasonal & Promotional Business Events',
+    upload: 'Real Data Upload & Processing',
+    reports: 'Enterprise Reports & Data Export',
+    model: 'ML Model Governance & Retraining'
+  };
+  document.getElementById('page-header-title').textContent = titles[tabId] || 'DemandIQ Enterprise';
+}
+
+// Modals Management
+function openAddProductModal() { document.getElementById('add-product-modal').classList.add('open'); }
+function closeAddProductModal() { document.getElementById('add-product-modal').classList.remove('open'); }
+async function saveNewProduct() {
+  const p = {
+    product_id: document.getElementById('new-p-id').value,
+    name: document.getElementById('new-p-name').value,
+    category: document.getElementById('new-p-cat').value,
+    price: +document.getElementById('new-p-price').value,
+    cost: +document.getElementById('new-p-cost').value,
+    current_stock: +document.getElementById('new-p-stock').value,
+    reorder_point: +document.getElementById('new-p-rop').value,
+    lead_time_days: +document.getElementById('new-p-leadtime').value,
+    supplier_id: document.getElementById('new-p-supplier').value
+  };
+  try {
+    const res = await fetch('/api/products', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(p)
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error);
+    closeAddProductModal();
+    showToast('Product added successfully', 'success');
+    refreshAllData();
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+function openAddEventModal() { document.getElementById('add-event-modal').classList.add('open'); }
+function closeAddEventModal() { document.getElementById('add-event-modal').classList.remove('open'); }
+async function saveNewEvent() {
+  const ev = {
+    event_name: document.getElementById('new-ev-name').value,
+    start_date: document.getElementById('new-ev-start').value,
+    end_date: document.getElementById('new-ev-end').value,
+    category: document.getElementById('new-ev-cat').value,
+    demand_uplift_pct: +document.getElementById('new-ev-uplift').value,
+    promotion_type: document.getElementById('new-ev-promo').value,
+    description: document.getElementById('new-ev-desc').value
+  };
+  try {
+    const res = await fetch('/api/events', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(ev)
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error);
+    closeAddEventModal();
+    showToast('Event added successfully', 'success');
+    fetchEvents();
+    fetchForecasts();
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+function openAddSupplierModal() { document.getElementById('add-supplier-modal').classList.add('open'); }
+function closeAddSupplierModal() { document.getElementById('add-supplier-modal').classList.remove('open'); }
+async function saveNewSupplier() {
+  const s = {
+    name: document.getElementById('new-sup-name').value,
+    contact_email: document.getElementById('new-sup-email').value,
+    lead_time_days: +document.getElementById('new-sup-leadtime').value,
+    reliability_score: +document.getElementById('new-sup-reliability').value
+  };
+  try {
+    const res = await fetch('/api/suppliers', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(s)
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error);
+    closeAddSupplierModal();
+    showToast('Supplier added successfully', 'success');
+    fetchSuppliers();
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+// Toast System
+function showToast(msg, type='info') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type === 'success' ? '✓' : (type === 'error' ? '✕' : 'ℹ')}</span> <div>${msg}</div>`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 4000);
+}
+
+// Charts Integration (Chart.js)
+function renderDashboardCharts(kpiData) {
+  // Chart 1: Historical vs Forecast Demand
+  createOrUpdateChart('chart-hist-vs-forecast', {
+    type: 'bar',
+    data: {
+      labels: ['M-5', 'M-4', 'M-3', 'M-2', 'M-1', 'Current Month (Forecast)'],
+      datasets: [
+        {
+          label: 'Historical Actual Sales',
+          data: [2100, 2350, 2200, 2480, 2650, null],
+          backgroundColor: 'rgba(109,250,200,0.4)',
+          borderColor: '#6dfac8',
+          borderWidth: 1.5,
+          borderRadius: 6
+        },
+        {
+          label: 'ML Model Forecast Demand',
+          data: [null, null, null, null, null, kpiData.kpis.expected_demand],
+          backgroundColor: 'rgba(124,109,250,0.6)',
+          borderColor: '#7c6dfa',
+          borderWidth: 1.5,
+          borderRadius: 6
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#a0a0b8', font: { family: 'DM Mono' } } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#686882' } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#686882' } }
+      }
+    }
+  });
+
+  // Chart 2: Monthly Demand Trend
+  createOrUpdateChart('chart-monthly-trend', {
+    type: 'line',
+    data: {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      datasets: [{
+        label: 'Demand Seasonal Index',
+        data: [1950, 1850, 2100, 2250, 2400, 2800, 2950, 2600, 2450, 2750, 3400, 3650],
+        borderColor: '#fa6d9a',
+        backgroundColor: 'rgba(250,109,154,0.1)',
+        tension: 0.35,
+        fill: true,
+        pointBackgroundColor: '#fa6d9a'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#a0a0b8', font: { family: 'DM Mono' } } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#686882' } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#686882' } }
+      }
+    }
+  });
+
+  // Chart 3: Category Demand
+  const catNames = Object.keys(kpiData.category_breakdown || {});
+  const catDemands = catNames.map(k => kpiData.category_breakdown[k].demand);
+  createOrUpdateChart('chart-category-demand', {
+    type: 'doughnut',
+    data: {
+      labels: catNames,
+      datasets: [{
+        data: catDemands,
+        backgroundColor: ['#7c6dfa', '#fa6d9a', '#6dfac8', '#f59e0b', '#38bdf8', '#8b5cf6', '#ec4899', '#10b981'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { color: '#a0a0b8', font: { size: 10 } } } }
+    }
+  });
+
+  // Chart 4: Top 10 High Demand
+  const topNames = (kpiData.top_high_demand || []).map(p => p.name.slice(0, 14));
+  const topVals = (kpiData.top_high_demand || []).map(p => p.forecast_demand);
+  createOrUpdateChart('chart-top-demand', {
+    type: 'bar',
+    data: {
+      labels: topNames,
+      datasets: [{
+        label: 'Demand Units',
+        data: topVals,
+        backgroundColor: '#7c6dfa',
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#686882' } },
+        y: { grid: { display: false }, ticks: { color: '#a0a0b8', font: { size: 10 } } }
+      }
+    }
+  });
+
+  // Chart 5: Supplier Performance
+  createOrUpdateChart('chart-supplier-performance', {
+    type: 'radar',
+    data: {
+      labels: ['Lead Time Compliance', 'Order Accuracy', 'Quality Rating', 'On-Time Delivery', 'Safety Buffer', 'Communication'],
+      datasets: [
+        {
+          label: 'Tier-1 Suppliers',
+          data: [94, 96, 95, 93, 89, 92],
+          borderColor: '#6dfac8',
+          backgroundColor: 'rgba(109,250,200,0.15)'
+        },
+        {
+          label: 'Tier-2 Suppliers',
+          data: [82, 85, 88, 80, 75, 84],
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245,158,11,0.15)'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#a0a0b8', font: { size: 10 } } } },
+      scales: {
+        r: {
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          angleLines: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { display: false },
+          pointLabels: { color: '#686882', font: { size: 9 } }
+        }
+      }
+    }
+  });
+}
+
+function renderFeatureImportanceChart(importances) {
+  if (!importances) return;
+  const entries = Object.entries(importances).sort((a,b)=>b[1]-a[1]).slice(0, 10);
+  const labels = entries.map(e => e[0].replace(/_enc$/,'').replace(/_/g, ' '));
+  const values = entries.map(e => (e[1] * 100).toFixed(1));
+
+  createOrUpdateChart('chart-feature-importance', {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Relative Importance %',
+        data: values,
+        backgroundColor: 'rgba(124,109,250,0.7)',
+        borderRadius: 5
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#686882' } },
+        y: { grid: { display: false }, ticks: { color: '#a0a0b8', font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function renderProductDetailChart(sales, horizons) {
+  const dates = (sales || []).map(s => s.sale_date.slice(5));
+  const qtys = (sales || []).map(s => s.sales_quantity);
+
+  const forecastPoints = Array(dates.length).fill(null);
+  if (horizons && horizons['30_days']) {
+    forecastPoints[forecastPoints.length - 1] = qtys[qtys.length - 1];
+    dates.push('+30d Forecast');
+    forecastPoints.push(horizons['30_days'].forecast_demand);
+  }
+
+  createOrUpdateChart('chart-product-detail', {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [
+        {
+          label: 'Historical Sales',
+          data: qtys,
+          borderColor: '#6dfac8',
+          backgroundColor: 'rgba(109,250,200,0.1)',
+          tension: 0.3,
+          fill: true
+        },
+        {
+          label: 'Forecast Projected Demand',
+          data: forecastPoints,
+          borderColor: '#7c6dfa',
+          borderDash: [5, 5],
+          tension: 0.2,
+          pointRadius: 6,
+          pointBackgroundColor: '#7c6dfa'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#686882' } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#686882' } }
+      }
+    }
+  });
+}
+
+function renderSimulationChart(sims) {
+  const labels = sims.map(s => s.label);
+  const demands = sims.map(s => s.predicted_demand);
+  const revenues = sims.map(s => s.projected_revenue);
+
+  createOrUpdateChart('chart-simulation', {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Predicted Demand (units)',
+          data: demands,
+          backgroundColor: 'rgba(124,109,250,0.6)',
+          yAxisID: 'y'
+        },
+        {
+          label: 'Projected Revenue ($)',
+          data: revenues,
+          type: 'line',
+          borderColor: '#6dfac8',
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#a0a0b8' } } },
+      scales: {
+        y: { type: 'linear', position: 'left', grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#686882' } },
+        y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#6dfac8' } },
+        x: { ticks: { color: '#686882', font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function createOrUpdateChart(id, config) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  if (appState.charts[id]) {
+    appState.charts[id].destroy();
+  }
+  appState.charts[id] = new Chart(ctx, config);
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('mobile-open');
+}
+
+// Start application
+window.addEventListener('DOMContentLoaded', initApp);
+</script>
+</body>
+</html>
